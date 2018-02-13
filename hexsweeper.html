@@ -152,7 +152,7 @@ Date: 2018-02-18
 
 function MessageBox(){
   this.DOMelement=document.getElementById("message");
-  let This=this;
+  var This=this;
   this.buttons=[];
 
   this.reset=function(){
@@ -170,7 +170,7 @@ function MessageBox(){
   }
 
   this.addButton = function(){
-    let button = document.createElement("button");
+    var button = document.createElement("button");
     button.classList.add("messageButton");
     this.DOMelement.getElementsByClassName("messageButtons")[0].appendChild(button);
     this.buttons.push(new ButtonMaker(this, button));
@@ -213,14 +213,14 @@ function MessageBox(){
       return this;
     }
     this.buttonHides=function(){
-      let p=this.parent;
+      var p=this.parent;
       this.addFunction(function(){p.hide();});
       return this;
     }
     this.buttonFinished=function(){
-      let content=document.createTextNode(this.text);
+      var content=document.createTextNode(this.text);
       this.button.appendChild(content);
-      let functions=this.functions;
+      var functions=this.functions;
       this.button.onclick=function(){
         for(var n=0;n<functions.length;n++){
           functions[n]();
@@ -233,7 +233,7 @@ function MessageBox(){
 
 
 
-let HexStateEnum = {"safe":1,"mined":2,"clear":3}
+var HexStateEnum = {"safe":1,"mined":2,"clear":3}
 
 function HexElement(DOMelement) {
   this.DOMelement=DOMelement;
