@@ -378,7 +378,7 @@ function hexClicked(i,j){
     var j=toCheck[n][1];
     var H = gameState.hexGrid[i][j];
 
-    if(H.getState()==HexStateEnum.safe || H.getState()==HexStateEnum.clear){
+    if(H.getState()==HexStateEnum.safe || H.getState()==HexStateEnum.clear && H.flagged==false){
       if(H.getState()==HexStateEnum.safe) gameState.clearedHexs++;
       H.colour(gameConfig.colourClear).setState(HexStateEnum.clear);
       var neighbours=[];
@@ -407,7 +407,7 @@ function hexClicked(i,j){
       }
       for(var m=0;m<neighbours.length;m++){
         var HH=gameState.hexGrid[neighbours[m][0]][neighbours[m][1]];
-        if(HH.getState()==HexStateEnum.safe){
+        if(HH.getState()==HexStateEnum.safe && HH.flagged==false){
           toCheck.push([neighbours[m][0],neighbours[m][1]]);
           HH.colour(gameConfig.colourClear).setState(HexStateEnum.clear);
           gameState.clearedHexs++;
