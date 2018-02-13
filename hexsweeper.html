@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<!--
+
+Author: Michael M
+Author site: https://github.com/Tragh
+License: MIT
+Date: 2018-02-18
+
+-->
+<html>
+  <head>
+    <title>Hexsweeper</title>
+    <meta charset="utf-8">
+    <meta content="">
+    <style>
+
+#hexBoard {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 0px;
+  display: block;
+}
+.hex {
+  position: relative;
+  width: 100px;
+  height: 57.74px;
+  background-color: #111111;
+  margin: 28.87px 0;
+}
+
+.hexB,
+.hexA {
+  position: absolute;
+  width: 0;
+  border-left: 50px solid transparent;
+  border-right: 50px solid transparent;
+}
+
+.hexB {
+  bottom: 100%;
+  border-bottom: 28.87px solid #111111;
+}
+
+.hexA {
+  top: 100%;
+  width: 0;
+  border-top: 28.87px solid #111111;
+}
+
+.hexM{
+  height: 1em;
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 0;
+  margin: auto;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+.hex-1:before {
+  content: "1";
+  color: #0000cc;
+}
+.hex-2:before {
+  content: "2";
+  color: #006600;
+}
+.hex-3:before {
+  content: "3";
+  color: #ff0000;
+}
+.hex-4:before {
+  content: "4";
+  color: #6600cc;
+}
+.hex-5:before {
+  content: "5";
+  color: #660066;
+}
+.hex-6:before {
+  content: "6";
+  color: #000000;
+}
+.hex-f {
+  width: 100%;
+  height: 100%;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAOCAYAAAAWo42rAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH4gINAQYn7WDjTgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAATUlEQVQoz62RSwrAMAgFM6H3v/JkUQhSCQqp69H3EXV0Zo7mJFBQSDJPBMqLFbRBlLbH19l5IYVBmTf1EAvnE8pgBTUBqduDnVr6l18vuUYkEcvG/QgAAAAASUVORK5CYII=) no-repeat center;
+  background-size: auto 100%;
+}
+.hex-m {
+  width: 100%;
+  height: 100%;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH4gINADsfrkh5WQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAWklEQVQoz62RQQ7AIAzD8P7/Z+80aaCVQkdPSEBSJ6itOtfsErD8ecv5cQKMzt37kXm2qkrqrLavIEfhX8yoaaoRQse8IvLmPlfVmOZ22pGAStrzqtiZqqpzA161Pw+dwSC5AAAAAElFTkSuQmCC) no-repeat center;
+  background-size: auto 100%;
+}
+
+#message {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+
+  height: 80vh;
+  z-index: 20;
+}
+#setup {
+
+}
+.messageBox {
+  background: #eeeeff;
+  padding: 2em;
+}
+.messageContent {
+  padding-bottom: 1em;
+}
+
+  </style>
+  </head>
+  <body>
+    <button id="newGame">New Game</button>
+    <div ><div id="hexTemplate" style="visibility: hidden; position: absolute; pointer-events:none;"><div class="hex" style="pointer-events:auto;"><div class="hexB"></div><div class="hexM"></div><div class="hexA"></div></div></div></div>
+
+
+    <div id="message" style="visibility: hidden;"><div class="messageBox"><div class="messageContent"></div><span class="messageButtons"> </span></div></div>
+
+
+<div style="visibility: hidden; position: absolute;"> <!-- This is a template for JS -->
+  <div id="setup">
+      <table border="0">
+        <tr>
+          <td>Width</td><td><input type="range" min="5" max="30" value="15" class="slider" id="widthSlider"></td>
+        </tr>
+        <tr>
+          <td>Height</td><td><input type="range" min="5" max="30" value="15" class="slider" id="heightSlider"></td>
+        </tr>
+        <tr>
+          <td>Mines</td><td><input type="range" min="5" max="100" value="25" class="slider" id="minesSlider"></td>
+        </tr>
+    </table>
+  </div>
+</div>
+
+
+    <div id="hexBoard"></div>
+
+  </body>
+
+
+
+<script>
+
+function MessageBox(){
+  this.DOMelement=document.getElementById("message");
+  let This=this;
+  this.buttons=[];
+
+  this.reset=function(){
+    //reset buttons
+    this.buttons=[];
+    var node=this.DOMelement.getElementsByClassName("messageButtons")[0];
+    var newNode = node.cloneNode(false);
+    node.parentNode.replaceChild(newNode ,node);
+
+    //reset content
+    var node=this.DOMelement.getElementsByClassName("messageContent")[0];
+    var newNode = node.cloneNode(false);
+    node.parentNode.replaceChild(newNode ,node);
+    return this;
+  }
+
+  this.addButton = function(){
+    let button = document.createElement("button");
+    button.classList.add("messageButton");
+    this.DOMelement.getElementsByClassName("messageButtons")[0].appendChild(button);
+    this.buttons.push(new ButtonMaker(this, button));
+    return this.buttons[this.buttons.length-1];
+  }
+
+  this.setContentNode = function(content){
+    var node=this.DOMelement.getElementsByClassName("messageContent")[0];
+    var newNode = node.cloneNode(false);
+    newNode.appendChild(content);
+    node.parentNode.replaceChild(newNode ,node);
+    return this;
+  }
+
+  this.setContentText = function(text){
+    return this.setContentNode(document.createTextNode(text));
+  }
+
+  this.show = function(){
+    this.DOMelement.style.visibility = "visible";
+    return this;
+  }
+  this.hide = function(){
+    this.DOMelement.style.visibility = "hidden";
+    return this;
+  }
+
+  function ButtonMaker(parent,button){
+    this.parent=parent;
+    this.button=button;
+    this.text="";
+    this.functions=[];
+
+    this.addFunction=function(fctn){
+      this.functions.push(fctn);
+      return this;
+    }
+    this.buttonText=function(text){
+      this.text=text;
+      return this;
+    }
+    this.buttonHides=function(){
+      let p=this.parent;
+      this.addFunction(function(){p.hide();});
+      return this;
+    }
+    this.buttonFinished=function(){
+      let content=document.createTextNode(this.text);
+      this.button.appendChild(content);
+      let functions=this.functions;
+      this.button.onclick=function(){
+        for(var n=0;n<functions.length;n++){
+          functions[n]();
+        }
+      }
+      return parent;
+    }
+  }
+}
+
+
+
+let HexStateEnum = {"safe":1,"mined":2,"clear":3}
+
+function HexElement(DOMelement) {
+  this.DOMelement=DOMelement;
+  this.size=100;
+  this.hexColour="#111111"
+  this.state=HexStateEnum.safe;
+  this.nearMines=0;
+  this.flagged=false;
+
+  this.setMarker = function(marker){
+    this.DOMelement.getElementsByClassName('hexM')[0].className="hexM hex-"+marker;
+    return this;
+  }
+  this.clearMarker = function(){
+    this.DOMelement.getElementsByClassName('hexM')[0].className="hexM";
+    return this;
+  }
+  this.setNearMines = function(nearMines){
+    this.nearMines=nearMines;
+    return this;
+  }
+  this.getNearMines = function(nearMines){
+    return this.nearMines;
+  }
+
+  this.getState = function() {
+    return this.state;
+  }
+  this.setState=function(state) {
+    this.state=state;
+    return this;
+  }
+  this.onClick = function(fctn){
+    this.DOMelement.getElementsByClassName('hex')[0].onclick=fctn;
+    return this;
+  }
+  this.onContextMenu = function(fctn){
+    this.DOMelement.getElementsByClassName('hex')[0].oncontextmenu=fctn;
+    return this;
+  }
+  this.top = function(top){
+    this.DOMelement.style.top=(top).toFixed(2)+"px";
+    return this;
+  }
+  this.left = function(left){
+    this.DOMelement.style.left=(left).toFixed(2)+"px";
+    return this;
+  }
+  this.colour = function(colour){
+    this.hexColour=colour;
+    var d=(this.size*0.28868).toFixed(2)+"px"      // 1/sqrt(12)
+    var DE=this.DOMelement.getElementsByClassName('hex')[0];
+    DE.style.backgroundColor=colour;
+    var DE=this.DOMelement.getElementsByClassName('hexB')[0];
+    DE.style.borderBottom=d+" solid "+colour;
+    var DE=this.DOMelement.getElementsByClassName('hexA')[0];
+    DE.style.borderTop=d+" solid "+colour;
+    return this;
+  }
+  this.size = function(size){
+    this.size=size;
+    var a=(size).toFixed(2)+"px"  // 1
+    var b=(size*0.57735).toFixed(2)+"px"  // 1/sqrt(3)
+    var c=(size*0.5).toFixed(2)+"px"      // 1/2
+    var d=(size*0.28868).toFixed(2)+"px"      // 1/sqrt(12)
+
+    var DE=this.DOMelement.getElementsByClassName('hex')[0];
+    DE.style.width=a;
+    DE.style.height=b;
+    DE.style.margin=d;
+    var DE=this.DOMelement.getElementsByClassName('hexB')[0];
+    DE.style.borderLeft=c+" solid transparent";
+    DE.style.borderRight=c+" solid transparent";
+    DE.style.borderBottom=d+" solid "+this.hexColour;
+    var DE=this.DOMelement.getElementsByClassName('hexA')[0];
+    DE.style.borderLeft=c+" solid transparent";
+    DE.style.borderRight=c+" solid transparent";
+    DE.style.borderTop=d+" solid "+this.hexColour;
+    return this;
+  }
+  this.append = function(){
+    document.getElementById('hexBoard').appendChild(this.DOMelement);
+    return this;
+  }
+  this.show = function(){
+    this.DOMelement.style.visibility='visible';
+    return this;
+  }
+}
+
+function HexFactory() {
+  this.hexTemplate=document.getElementById('hexTemplate');
+  this.createHex=function() {
+    return new HexElement(this.hexTemplate.cloneNode(true));
+  }
+}
+
+var hexFactory=new HexFactory();
+
+messageBox = new MessageBox();
+
+function hexRightClicked(i,j,event){
+  if(!gameState.playable) return;
+  if(event.preventDefault != undefined)
+    event.preventDefault();
+  if(event.stopPropagation != undefined)
+    event.stopPropagation();
+
+    var H = gameState.hexGrid[i][j];
+    if(H.flagged==true){
+      H.clearMarker();
+      H.flagged=false;
+    }else if(H.getState()!=HexStateEnum.clear && H.flagged==false){
+      H.setMarker("f");
+      H.flagged=true;
+    }
+}
+
+function hexClicked(i,j){
+  if(!gameState.playable) return;
+  var H = gameState.hexGrid[i][j];
+  if(H.flagged==true) return;
+  if(H.getState()==HexStateEnum.mined){
+   H.setMarker("m");
+   messageBox.reset()
+     .setContentText("Game Over")
+     .addButton()
+       .buttonText("Okay")
+       .buttonHides()
+       .buttonFinished()
+     .show();
+     gameState.playable=false;
+    return;
+  }else if(H.getState()==HexStateEnum.clear){
+   return;
+  }
+
+  var toCheck=[[i,j]];
+  for(var n=0;true;n++){
+    if(n>=toCheck.length) break;
+    var i=toCheck[n][0];
+    var j=toCheck[n][1];
+    var H = gameState.hexGrid[i][j];
+
+    if(H.getState()==HexStateEnum.safe || H.getState()==HexStateEnum.clear){
+      if(H.getState()==HexStateEnum.safe) gameState.clearedHexs++;
+      H.colour(gameConfig.colourClear).setState(HexStateEnum.clear);
+      var neighbours=[];
+      function app(i,j){
+        if(i>=0 && i<gameConfig.gridH && j>=0 && j<gameConfig.gridW){
+          neighbours.push([i,j]);
+        }
+      }
+      app(i,j-1);
+      app(i,j+1);
+      app(i-1,j-1+i%2);
+      app(i-1,j+i%2);
+      app(i+1,j-1+i%2);
+      app(i+1,j+i%2);
+
+      var mineCounter=0;
+      for(var m=0;m<neighbours.length;m++){
+        var HH=gameState.hexGrid[neighbours[m][0]][neighbours[m][1]];
+        if(HH.getState()==HexStateEnum.mined){
+          mineCounter++;
+        }
+      }
+      if(mineCounter>0){
+        H.setNearMines(mineCounter).setMarker(mineCounter);
+        continue;
+      }
+      for(var m=0;m<neighbours.length;m++){
+        var HH=gameState.hexGrid[neighbours[m][0]][neighbours[m][1]];
+        if(HH.getState()==HexStateEnum.safe){
+          toCheck.push([neighbours[m][0],neighbours[m][1]]);
+          HH.colour(gameConfig.colourClear).setState(HexStateEnum.clear);
+          gameState.clearedHexs++;
+        }
+      }
+    }
+  }
+
+  if(gameState.clearedHexs==gameConfig.gridW*gameConfig.gridH-gameConfig.numMines){
+    messageBox.reset()
+      .setContentText("Congrats, you won!")
+      .addButton()
+        .buttonText("Okay")
+        .buttonHides()
+        .buttonFinished()
+      .show();
+      gameState.playable=false;
+  }
+}
+
+
+
+
+function updateConfig(){
+  gameConfig.gridW=document.getElementById('widthSlider').value;
+  gameConfig.gridH=document.getElementById('heightSlider').value;
+  gameConfig.numMines=document.getElementById('minesSlider').value;
+
+
+  gameState.clearedHexs=0;
+  gameState.hexGrid=[];
+
+  var node = document.getElementById("hexBoard");
+  node.style.width=(1.05*gameConfig.gridW*gameConfig.size+gameConfig.size).toFixed(0)+"px";
+  var emptyNode = node.cloneNode(false);
+  node.parentNode.replaceChild(emptyNode ,node);
+
+  for(var i=0;i<gameConfig.gridH;i++){
+    gameState.hexGrid[i]=[];
+    for(var j=0;j<gameConfig.gridW;j++){
+      let ic=i;  //ic and jc have their values locally so can be passed to hexClicked without worry of them being later changed
+      let jc=j;
+      gameState.hexGrid[i][j]=hexFactory.createHex()
+                      .size(gameConfig.size)
+                      .colour(gameConfig.colour)
+                      .top(i*(gameConfig.size*0.86602*1.05).toFixed(0))  // 1/sqrt(12) + 1/sqrt(3)
+                      .left(j*(gameConfig.size*1.05).toFixed(0)+(i%2)*(gameConfig.size*1.05/2).toFixed(0))
+                      .onClick(function(){hexClicked(ic,jc)})
+                      .onContextMenu(function(event){hexRightClicked(ic,jc,event)})
+                      .append()
+                      .show();
+    }
+  }
+
+}
+
+function loadMines(){
+  function genRandoms(n,from){
+    //use this algorithm because it has pre-defined running time unlike some alternatives
+    if(n>from) n=from;
+    var randoms=Array(from);
+    for(var i=0;i<from;i++){
+      randoms[i]=i;
+    }
+    for(var i=0;i<n;i++){
+      var s=Math.floor(Math.random() * from);
+      var t=randoms[i];
+      randoms[i]=randoms[s];
+      randoms[s]=t;
+    }
+    return randoms.slice(0,n);
+  }
+
+  var randoms=genRandoms(gameConfig.numMines,gameConfig.gridW*gameConfig.gridH);
+
+  for(var n=0;n<randoms.length;n++){
+    var i=(randoms[n]/gameConfig.gridW)|0; //integer division
+    var j=randoms[n]%gameConfig.gridW;
+    gameState.hexGrid[i][j].setState(HexStateEnum.mined);
+  }
+}
+
+var setupNode=document.getElementById("setup");
+var DE=document.getElementById("widthSlider");
+DE.onchange=function(){updateConfig();};
+DE.oninput=DE.onchange;
+var DE=document.getElementById("heightSlider");
+DE.onchange=function(){updateConfig();};
+DE.oninput=DE.onchange;
+var DE=document.getElementById("minesSlider");
+DE.onchange=function(){updateConfig();};
+DE.oninput=DE.onchange;
+
+
+var gameConfig={
+  "size": 52,
+  "gridW": 15,
+  "gridH": 15,
+  "numMines": 25,
+  "colour": "#9999BB",
+  "colourClear": "#eeeeee",
+}
+
+var gameState={
+  "clearedHexs": 0,
+  "hexGrid": [],
+  "playable": false,
+}
+
+updateConfig();
+
+var DE=document.getElementById("newGame");
+DE.onclick=function(){
+  messageBox.reset()
+    .setContentNode(setupNode)
+    .addButton()
+      .buttonText("Begin")
+      .buttonHides()
+      .addFunction(function(){
+        updateConfig();
+        loadMines();
+        gameState.playable=true;})
+      .buttonFinished()
+    .show();
+
+    gameState.playable=false;
+    updateConfig();
+}
+
+DE.onclick();
+
+
+</script>
+</html>
